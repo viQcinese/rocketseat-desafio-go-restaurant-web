@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
+import { couldStartTrivia } from 'typescript';
 import Header from '../../components/Header';
 
 import api from '../../services/api';
@@ -25,32 +26,62 @@ const Dashboard: React.FC = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
 
+  // (OK) Load data from API
   useEffect(() => {
     async function loadFoods(): Promise<void> {
-      // TODO LOAD FOODS
+      const response = await api.get('/foods');
+      setFoods(response.data);
     }
 
     loadFoods();
   }, []);
 
+  // (OK) Add food in the API
   async function handleAddFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
     try {
-      // TODO ADD A NEW FOOD PLATE TO THE API
+      const response = await api.post('/foods', food);
+
+      const newFood = response.data;
+
+      newFood.available = true;
+
+      const updatedFoods = [...foods, newFood];
+
+      setFoods(updatedFoods);
     } catch (err) {
       console.log(err);
     }
   }
 
+  // (OK) Update food in the API
   async function handleUpdateFood(
     food: Omit<IFoodPlate, 'id' | 'available'>,
   ): Promise<void> {
-    // TODO UPDATE A FOOD PLATE ON THE API
+    console.log('got here');
+    const response = await api.put(`/foods/${editingFood.id}`, food);
+
+    const editedFood = response.data;
+
+    const previousFoodsWithoutEditedFood = foods.filter(
+      oldFood => !oldFood.id === editedFood.id,
+    );
+
+    setFoods([...previousFoodsWithoutEditedFood, editedFood]);
   }
 
+  // (OK) Delete Food from the API
   async function handleDeleteFood(id: number): Promise<void> {
-    // TODO DELETE A FOOD PLATE FROM THE API
+    try {
+      await api.delete(`/foods/${id}`);
+
+      const updatedFoods = foods.filter(food => food.id !== id);
+
+      setFoods(updatedFoods);
+    } catch (err) {
+      console.log(err);
+    }
   }
 
   function toggleModal(): void {
@@ -61,8 +92,10 @@ const Dashboard: React.FC = () => {
     setEditModalOpen(!editModalOpen);
   }
 
+  // (OK) Receive Food data from the FoodComponent and open EditModal
   function handleEditFood(food: IFoodPlate): void {
-    // TODO SET THE CURRENT EDITING FOOD ID IN THE STATE
+    setEditingFood(food);
+    setEditModalOpen(!editModalOpen);
   }
 
   return (
